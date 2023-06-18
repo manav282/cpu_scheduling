@@ -1,6 +1,22 @@
 $(document).ready(
     function () {
 
+        var i = 0;
+        var txt = 'CPU Scheduling Simulator';
+        var speed = 150;
+
+        // live typing header
+        function typeWriter() {
+            if (i < txt.length) {
+                document.getElementById("typewriter").innerHTML += txt.charAt(i);
+                i++;
+                setTimeout(typeWriter, speed);
+            }
+        }
+
+        typeWriter();
+
+        // hide RR time quantum
         $(".form-group-time-quantum").hide();
 
         // Show hide RR time quantum
@@ -12,21 +28,28 @@ $(document).ready(
             }
         });
 
+        const processList = [];
+        const execution = [];
+        const gantt = [];
+        const t = [];
 
-        var processList = [];
-        let execution = "";
+        // initializing all values to default
         $('#avgTurnaroundTime').val('');
         $('#avgWaitingTime').val('');
         $('#throughput').val('');
+        $('#algorithmSelector').children('option:selected').val('optFCFS');
 
-        let draw = document.querySelector('#chart');
         let heading = document.querySelector('#heading');
+        let chart = document.querySelector('#chart');
+        let time = document.querySelector('#time');
 
+        // Adding the processes
         $('#btnAddProcess').on('click', function () {
             var processID = $('#processID');
             var arrivalTime = $('#arrivalTime');
             var burstTime = $('#burstTime');
 
+            // empty field validation
             if (processID.val() === '' || arrivalTime.val() === '' || burstTime.val() === '') {
                 processID.addClass('is-invalid');
                 arrivalTime.addClass('is-invalid');
@@ -34,6 +57,7 @@ $(document).ready(
                 return;
             }
 
+            // creating objects of process
             var process = {
                 processID: parseInt(processID.val(), 10),
                 arrivalTime: parseInt(arrivalTime.val(), 10),
@@ -42,7 +66,8 @@ $(document).ready(
 
             processList.push(process);
 
-            $('#tblProcessList > tbody:last-child').append(
+            // code to append a row to process table
+            $('#Process > tbody:last-child').append(
                 `<tr>
                     <td id="tdProcessID">${processID.val()}</td>
                     <td id="tdArrivalTime">${arrivalTime.val()}</td>
@@ -80,9 +105,40 @@ $(document).ready(
                 roundRobin();
             }
 
+            // preparing gantt chart
             heading.classList.add('active');
-            execution = execution + "End";
-            draw.innerHTML = '<h2>' + execution + '</h2>';
+            chart.classList.add('active');
+            time.classList.add('active');
+            let n = execution.length;
+
+            //merging consecutive intervals having same processID in execution array which contains per second time interval 
+            let cnt = 1;
+            for (var i = 1; i < n; i++) {
+                if (execution[i] == execution[i - 1]) {
+                    cnt++;
+                }
+                else {
+                    if (execution[i - 1] == '-1')
+                        gantt.push('Idle');
+                    else
+                        gantt.push(execution[i - 1]);
+                    t.push(cnt);
+                    cnt++;
+                }
+            }
+
+            gantt.push(execution[n - 1]);
+            t.push(cnt);
+
+            $('#chart > tbody:last-child').append(`<td style="width:80px;" id="processID">ProcessId:</td>`);
+            $('#time > tbody:last-child').append(`<td style="width:80px;" id="processID">Time(t=0):</td>`);
+
+            $.each(gantt, function (key, value) {
+                $('#chart > tbody:last-child').append(`<td style="width:50px;" id="processID">${value}</td>`);
+            });
+            $.each(t, function (key, value) {
+                $('#time > tbody:last-child').append(`<td style="width:50px;" id="processID">${value}</td>`);
+            });
         });
 
         function firstComeFirstServed() {
@@ -94,7 +150,8 @@ $(document).ready(
                 addToQueue();
                 while (queue.length == 0) {
                     time++;
-                    execution = execution + "Idle->";
+                    // execution = execution + "Idle->";
+                    execution.push(-1);
                     addToQueue();
                 }
 
@@ -107,7 +164,11 @@ $(document).ready(
                 process.completedTime = time;
                 process.turnAroundTime = process.completedTime - process.arrivalTime;
                 process.waitingTime = process.turnAroundTime - process.burstTime;
-                execution = execution + (process.processID).toString() + "->";
+                // execution = execution + (process.processID).toString() + "->";
+                const temp = process.burstTime;
+                while (temp--) {
+                    execution.push(process.processID);
+                }
                 completedList.push(process);
             }
 
@@ -125,9 +186,9 @@ $(document).ready(
                 }
             }
 
-            // Bind table data
+            // Bind result table
             $.each(completedList, function (key, process) {
-                $('#tblResults > tbody:last-child').append(
+                $('#Results > tbody:last-child').append(
                     `<tr>
                         <td id="tdProcessID">${process.processID}</td>
                         <td id="tdArrivalTime">${process.arrivalTime}</td>
@@ -166,7 +227,8 @@ $(document).ready(
                 addToQueue();
                 while (queue.length == 0) {
                     time++;
-                    execution = execution + "Idle->";
+                    // execution = execution + "Idle->";
+                    execution.push(-1);
                     addToQueue();
                 }
                 processToRun = selectProcess();
@@ -182,6 +244,7 @@ $(document).ready(
                 processToRun.waitingTime = processToRun.turnAroundTime - processToRun.burstTime;
                 completedList.push(processToRun);
             }
+
             function addToQueue() {
                 for (var i = 0; i < processList.length; i++) {
                     if (processList[i].arrivalTime === time) {
@@ -195,6 +258,7 @@ $(document).ready(
                     }
                 }
             }
+
             function selectProcess() {
                 if (queue.length != 0) {
                     queue.sort(function (a, b) {
@@ -206,13 +270,18 @@ $(document).ready(
                     });
                 }
                 var process = queue.shift();
-                execution = execution + (process.processID).toString() + "->";
+                // execution = execution + (process.processID).toString() + "->";
+                // execution.push(process.processID);
+                const temp = process.burstTime;
+                while (temp--) {
+                    execution.push(process.processID);
+                }
                 return process;
             }
 
             // Bind table data
             $.each(completedList, function (key, process) {
-                $('#tblResults > tbody:last-child').append(
+                $('#Results > tbody:last-child').append(
                     `<tr>
                         <td id="tdProcessID">${process.processID}</td>
                         <td id="tdArrivalTime">${process.arrivalTime}</td>
@@ -252,7 +321,8 @@ $(document).ready(
                 addToQueue();
                 while (queue.length == 0) {
                     time++;
-                    execution = execution + "Idle->";
+                    // execution = execution + "Idle->";
+                    execution.push(-1);
                     addToQueue();
                 }
                 selectProcessForSRTF();
@@ -283,13 +353,15 @@ $(document).ready(
                     });
                     if (queue[0].burstTime == 1) {
                         process = queue.shift();
-                        execution = execution + (process.processID).toString() + "->";
+                        // execution = execution + (process.processID).toString() + "->";
+                        execution.push(process.processID);
                         process.completedTime = time + 1;
                         completedList.push(process);
 
                     } else if (queue[0].burstTime > 1) {
                         process = queue[0];
-                        execution = execution + (process.processID).toString() + "->";
+                        // execution = execution + (process.processID).toString() + "->";
+                        execution.push(process.processID);
                         queue[0].burstTime = process.burstTime - 1;
                     }
                 }
@@ -301,7 +373,7 @@ $(document).ready(
 
             // Fetch table data
             var TableData = [];
-            $('#tblProcessList tr').each(function (row, tr) {
+            $('#Process tr').each(function (row, tr) {
                 TableData[row] = {
                     "processID": parseInt($(tr).find('td:eq(0)').text()),
                     "arrivalTime": parseInt($(tr).find('td:eq(1)').text()),
@@ -325,7 +397,7 @@ $(document).ready(
 
             // Bind table data
             $.each(completedList, function (key, process) {
-                $('#tblResults > tbody:last-child').append(
+                $('#Results > tbody:last-child').append(
                     `<tr>
                         <td id="tdProcessID">${process.processID}</td>
                         <td id="tdArrivalTime">${process.arrivalTime}</td>
@@ -372,7 +444,8 @@ $(document).ready(
                 addToQueue();
                 while (queue.length == 0) {
                     time++;
-                    execution = execution + "Idle->";
+                    // execution = execution + "Idle->";
+                    execution.push(-1);
                     addToQueue();
                 }
                 selectProcessForRR();
@@ -395,7 +468,8 @@ $(document).ready(
 
                 if (queue[0].burstTime < timeQuantumVal) {
                     process = queue.shift();
-                    execution = execution + (process.processID).toString() + "->";
+                    // execution = execution + (process.processID).toString() + "->";
+                    execution.push(process.processID);
                     process.completedTime = time + process.burstTime;
 
                     for (var index = 0; index < process.burstTime; index++) {
@@ -408,7 +482,8 @@ $(document).ready(
                 else if (queue[0].burstTime == timeQuantumVal) {
                     process = queue.shift();
                     process.completedTime = time + timeQuantumVal;
-                    execution = execution + (process.processID).toString() + "->";
+                    // execution = execution + (process.processID).toString() + "->";
+                    execution.push(process.processID);
                     completedList.push(process);
 
                     for (var index = 0; index < timeQuantumVal; index++) {
@@ -419,7 +494,8 @@ $(document).ready(
                 else if (queue[0].burstTime > timeQuantumVal) {
                     process = queue[0];
                     queue[0].burstTime = process.burstTime - timeQuantumVal;
-                    execution = execution + (process.processID).toString() + "->";
+                    // execution = execution + (process.processID).toString() + "->";
+                    execution.push(process.processID);
                     for (var index = 0; index < timeQuantumVal; index++) {
                         time++;
                         addToQueue();
@@ -432,7 +508,7 @@ $(document).ready(
 
             // Fetch initial table data
             var TableData = [];
-            $('#tblProcessList tr').each(function (row, tr) {
+            $('#Process tr').each(function (row, tr) {
                 TableData[row] = {
                     "processID": parseInt($(tr).find('td:eq(0)').text()),
                     "arrivalTime": parseInt($(tr).find('td:eq(1)').text()),
@@ -456,7 +532,7 @@ $(document).ready(
 
             // Bind table data
             $.each(completedList, function (key, process) {
-                $('#tblResults > tbody:last-child').append(
+                $('#Results > tbody:last-child').append(
                     `<tr>
                         <td id="tdProcessID">${process.processID}</td>
                         <td id="tdArrivalTime">${process.arrivalTime}</td>
