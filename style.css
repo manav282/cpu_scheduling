@@ -1,22 +1,7 @@
-.buttonAlgo{
-    border-radius: 15px !important; 
-    width: 70px;
-}
-
-#timeQuantum{
-  width: 80px;
-}
-
-#heading{
+#heading,#chart,#time{
     display:none;
 }
-#heading.active{
-    display:block;
-}
-#chart{
-    margin-bottom: 10px;
-}
 
-h1{
-    margin:auto;
+#heading.active,#chart.active,#time.active{
+    display:block;
 }
