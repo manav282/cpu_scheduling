@@ -37,6 +37,7 @@ $(document).ready(
         $('#avgTurnaroundTime').val('');
         $('#avgWaitingTime').val('');
         $('#throughput').val('');
+        $("#timeQuantum").val('0');
         $('#algorithmSelector').children('option:selected').val('optFCFS');
 
         let heading = document.querySelector('#heading');
@@ -130,14 +131,14 @@ $(document).ready(
             gantt.push(execution[n - 1]);
             t.push(cnt);
 
-            $('#chart > tbody:last-child').append(`<td style="width:80px;" id="processID">ProcessId:</td>`);
-            $('#time > tbody:last-child').append(`<td style="width:80px;" id="processID">Time(t=0):</td>`);
+            $('#chart > tbody:last-child').append(`<td style="width:80px;">ProcessId:</td>`);
+            $('#time > tbody:last-child').append(`<td style="width:80px;">Time(t=0):</td>`);
 
             $.each(gantt, function (key, value) {
-                $('#chart > tbody:last-child').append(`<td style="width:50px;" id="processID">${value}</td>`);
+                $('#chart > tbody:last-child').append(`<td style="width:50px;">${value}</td>`);
             });
             $.each(t, function (key, value) {
-                $('#time > tbody:last-child').append(`<td style="width:50px;" id="processID">${value}</td>`);
+                $('#time > tbody:last-child').append(`<td style="width:50px;">${value}</td>`);
             });
         });
 
@@ -165,9 +166,10 @@ $(document).ready(
                 process.turnAroundTime = process.completedTime - process.arrivalTime;
                 process.waitingTime = process.turnAroundTime - process.burstTime;
                 // execution = execution + (process.processID).toString() + "->";
-                const temp = process.burstTime;
-                while (temp--) {
+                var temp = process.burstTime;
+                while (temp > 0) {
                     execution.push(process.processID);
+                    temp = temp - 1;
                 }
                 completedList.push(process);
             }
@@ -272,9 +274,10 @@ $(document).ready(
                 var process = queue.shift();
                 // execution = execution + (process.processID).toString() + "->";
                 // execution.push(process.processID);
-                const temp = process.burstTime;
-                while (temp--) {
+                var temp = process.burstTime;
+                while (temp > 0) {
                     execution.push(process.processID);
+                    temp = temp - 1;
                 }
                 return process;
             }
@@ -467,9 +470,12 @@ $(document).ready(
             function selectProcessForRR() {
 
                 if (queue[0].burstTime < timeQuantumVal) {
+                    var temp = queue[0].burstTime;
                     process = queue.shift();
-                    // execution = execution + (process.processID).toString() + "->";
-                    execution.push(process.processID);
+                    while (temp > 0) {
+                        execution.push(process.processID);
+                        temp = temp - 1;
+                    }
                     process.completedTime = time + process.burstTime;
 
                     for (var index = 0; index < process.burstTime; index++) {
@@ -480,10 +486,14 @@ $(document).ready(
 
                 }
                 else if (queue[0].burstTime == timeQuantumVal) {
+                    var temp = queue[0].burstTime;
                     process = queue.shift();
                     process.completedTime = time + timeQuantumVal;
-                    // execution = execution + (process.processID).toString() + "->";
-                    execution.push(process.processID);
+
+                    while (temp > 0) {
+                        execution.push(process.processID);
+                        temp = temp - 1;
+                    }
                     completedList.push(process);
 
                     for (var index = 0; index < timeQuantumVal; index++) {
@@ -494,8 +504,12 @@ $(document).ready(
                 else if (queue[0].burstTime > timeQuantumVal) {
                     process = queue[0];
                     queue[0].burstTime = process.burstTime - timeQuantumVal;
-                    // execution = execution + (process.processID).toString() + "->";
-                    execution.push(process.processID);
+
+                    var temp = timeQuantumVal;
+                    while (temp > 0) {
+                        execution.push(process.processID);
+                        temp = temp - 1;
+                    }
                     for (var index = 0; index < timeQuantumVal; index++) {
                         time++;
                         addToQueue();
